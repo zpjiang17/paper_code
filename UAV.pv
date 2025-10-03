@@ -1,0 +1,160 @@
+(*...channels...*)
+free cha:channel[private].
+free chb:channel[private].
+free chd:channel[private].
+free che:channel[private].
+free chc:channel.
+(*...constants...*)
+free IDi:bitstring[private].
+free KGC:bitstring.
+
+
+(*...secret key....*)
+free P:bitstring[private].
+(*...session key....*)
+free m:bitstring[private].
+(*...functions...*)
+fun concat(bitstring,bitstring):bitstring.
+fun Hash(bitstring):bitstring.
+fun xor(bitstring,bitstring):bitstring.
+fun ADD(bitstring,bitstring):bitstring.
+fun MUL(bitstring,bitstring):bitstring.
+
+(*....events....*)
+event beginKGCagent(bitstring).
+event endKGCagent(bitstring).
+
+event beginUAVNode(bitstring).
+event endUAVNode(bitstring).
+event beginGCSNode(bitstring).
+event endGCSNode(bitstring).
+
+(*....adversary's process..*)
+
+query attacker(m).
+query attacker(IDi).
+
+query id:bitstring;inj-event(endKGCagent(id))==>inj-event(beginKGCagent(id)).
+query id:bitstring;inj-event(endUAVNode(id))==>inj-event(beginUAVNode(id)).
+query id:bitstring;inj-event(endGCSNode(id))==>inj-event(beginGCSNode(id)).
+
+(*..user's process..*)
+let pGCS=
+new IDG:bitstring;
+new aG:bitstring;
+let AG =MUL(aG,P)in
+in(chd,Fpub:bitstring);
+let HaFG =Hash (MUL(aG,Fpub))in
+let TIDG= xor(IDG,HaFG)in
+out(chd,(TIDG,AG));
+in(chd,PIDG:bitstring);
+
+new xG:bitstring;
+let XG = MUL(xG,P)in
+out(che,(PIDG,XG));
+in(che,(zG:bitstring,YG:bitstring,Ppub:bitstring));
+let HG1 = Hash(concat(PIDG,concat(XG,concat(YG,Ppub))))in
+if MUL(zG,P)= ADD(XG,MUL(HG1,Ppub))then 
+    let PKG = concat(XG,YG)in
+    let skG = concat(xG,zG)in
+
+new PIDG:bitstring;
+new xG:bitstring;
+let XG = MUL(xG,P)in
+new yG:bitstring;
+let YG = MUL(yG,P)in
+(*renzheng*)
+event beginGCSNode(IDG);
+out(chc,(XG,YG,PIDG));
+in(chc,(dertai:bitstring,Ci:bitstring,Ni:bitstring,PIDi:bitstring,PKi:bitstring,Ti:bitstring));
+let Zi'=MUL(Ni,ADD(xG,zG))in
+let hi2' = Hash(concat(PIDG,concat(XG,concat(Ni,concat(Zi',Ti)))))in
+
+let mi = xor(Ci,hi2')in
+event endGCSNode(IDG)
+.
+let pKGC=
+event beginKGCagent(KGC);
+in(cha,Fpub:bitstring);
+new s:bitstring;
+let Ppub =MUL(s,P)in
+
+in(cha,PIDi:bitstring);
+in(chb,(PIDi':bitstring,Xi:bitstring));
+if(PIDi=PIDi')then 
+    new yi:bitstring;
+    let Yi = MUL(yi,P)in
+    let Hi1 = Hash(concat(PIDi,concat(Xi,concat(Yi,Ppub))))in
+    let zi = ADD(yi,MUL(s,Hi1))in
+    out(chb,(zi,Yi,Ppub));
+
+in(chd,Fpub:bitstring);
+
+in(chd,PIDG:bitstring);
+in(che,(PIDG':bitstring,XG:bitstring));
+if(PIDG=PIDG')then 
+    new yG:bitstring;
+    let YG = MUL(yG,P)in
+    let HG1 = Hash(concat(PIDG,concat(XG,concat(YG,Ppub))))in
+    let zG = ADD(yG,MUL(s,HG1))in
+    out(che,(zG,YG,Ppub));
+event endKGCagent(KGC)
+
+.
+let pUAV=
+new ai:bitstring;
+let Ai =MUL(ai,P)in
+in(cha,Fpub:bitstring);
+let HaFi =Hash (MUL(ai,Fpub))in
+let TIDi= xor(IDi,HaFi)in
+out(cha,(TIDi,Ai));
+in(cha,PIDi:bitstring);
+
+new xi:bitstring;
+let Xi = MUL(xi,P)in
+out(chb,(PIDi,Xi));
+in(chb,(zi:bitstring,Yi:bitstring,Ppub:bitstring));
+let Hi1 = Hash(concat(PIDi,concat(Xi,concat(Yi,Ppub))))in
+if MUL(zi,P)= ADD(Xi,MUL(Hi1,Ppub))then 
+    let PKi = concat(Xi,Yi)in
+    let ski = concat(xi,zi)in
+(*renzheng*)
+event beginUAVNode(IDi);
+in(chc,(XG:bitstring,YG:bitstring,PIDG:bitstring));
+new ni:bitstring;
+new Ti:bitstring;
+let Ni = MUL(ni,P)in
+let HG1 = Hash(concat(PIDG,concat(XG,concat(YG,Ppub))))in
+let Zi =MUL(ni,ADD(XG,ADD(YG,MUL(HG1,Ppub))))in
+let Hi2 = Hash(concat(PIDG,concat(XG,concat(Ni,concat(Zi,Ti)))))in
+let Ci = xor(Hi2,m)in
+let Hi3 = Hash(concat(PIDi,concat(Xi,concat(Ci,concat(Ni,Ti)))))in
+let dertai = ADD(ni,MUL(Hi3,ADD(xi,zi)))in
+out(chc,(dertai,Ci,Ni,PIDi,PKi,Ti));
+
+event endUAVNode(IDi)
+.
+let pFA=
+    new f:bitstring;
+    let Fpub =MUL(f,P)in
+    out(cha,(Fpub));
+    in(cha,(TIDi:bitstring,Ai:bitstring));
+    let IDi =xor(TIDi,Hash(MUL(f,Ai)))in
+    new DLi:bitstring;
+    let TPIDi = xor(IDi,Hash(concat(MUL(f,Ai),DLi)))in
+    let PIDi =concat(TPIDi,DLi)in
+    out(cha,PIDi);
+
+    out(chd,(Fpub));
+    in(chd,(TIDG:bitstring,AG:bitstring));
+    let IDG =xor(TIDG,Hash(MUL(f,AG)))in
+    new DLG:bitstring;
+    let TPIDG = xor(IDi,Hash(concat(MUL(f,AG),DLG)))in
+    let PIDG =concat(TPIDG,DLG)in
+    out(chd,PIDG);
+0
+.
+
+
+process
+    ((!pKGC) | (!pUAV) | (!pGCS) | (!pFA))
