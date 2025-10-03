@@ -1,2 +1,2 @@
-# paper_code
+# papercode
 Basic Code Of Our Paper
